@@ -26,7 +26,7 @@ export const AuthMethodCard = ({ data, isLoading }) => {
     let whfbCount = 0;
 
     enabledUsers.forEach((user) => {
-      const methods = user.MFAMethods || [];
+      const methods = Array.isArray(user.MFAMethods) ? user.MFAMethods : [];
       const perUser = user.PerUser === "enforced" || user.PerUser === "enabled";
       const hasRegistered = user.MFARegistration === true;
 
@@ -111,7 +111,7 @@ export const AuthMethodCard = ({ data, isLoading }) => {
   const processedData = processData();
 
   return (
-    <Card sx={{ flex: 1 }}>
+    <Card sx={{ flex: 1, height: '100%' }}>
       <CardHeader
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -134,6 +134,7 @@ export const AuthMethodCard = ({ data, isLoading }) => {
                 alignItems: "center",
                 justifyContent: "center",
                 height: "100%",
+                width: "100%",
               }}
             >
               <Typography variant="body2" color="text.secondary">
