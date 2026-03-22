@@ -18,15 +18,15 @@ import { Grid } from "@mui/system";
 import { ArrowLeftIcon } from "@mui/x-date-pickers";
 import { useRouter } from "next/router";
 import { useForm, useFormState, useWatch } from "react-hook-form";
-import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
-import { CippFormTenantSelector } from "/src/components/CippComponents/CippFormTenantSelector";
+import CippFormComponent from "../../../../components/CippComponents/CippFormComponent";
+import { CippFormTenantSelector } from "../../../../components/CippComponents/CippFormTenantSelector";
 import CippButtonCard from "../../../../components/CippCards/CippButtonCard";
-import alertList from "/src/data/alerts.json";
-import auditLogTemplates from "/src/data/AuditLogTemplates";
-import auditLogSchema from "/src/data/AuditLogSchema.json";
+import alertList from "../../../../data/alerts.json";
+import auditLogTemplates from "../../../../data/AuditLogTemplates";
+import auditLogSchema from "../../../../data/AuditLogSchema.json";
 import { Save, Delete } from "@mui/icons-material";
 
-import { Layout as DashboardLayout } from "/src/layouts/index.js"; // Dashboard layout
+import { Layout as DashboardLayout } from "../../../../layouts/index.js"; // Dashboard layout
 import { CippApiResults } from "../../../../components/CippComponents/CippApiResults";
 import { ApiGetCall, ApiPostCall } from "../../../../api/ApiCall";
 import { PlusIcon } from "@heroicons/react/24/outline";
@@ -116,7 +116,7 @@ const AlertWizard = () => {
             formControl.setValue(
               `conditions.${index}.Input`,
               { value: "" },
-              { shouldValidate: false }
+              { shouldValidate: false },
             );
           } else {
             formControl.setValue(`conditions.${index}.Input`, "", { shouldValidate: false });
@@ -139,13 +139,13 @@ const AlertWizard = () => {
           ? alert.excludedTenants.map((tenant) => ({ value: tenant, label: tenant }))
           : [];
         const usedCommand = alertList?.find(
-          (cmd) => cmd.name === alert.RawAlert.Command.replace("Get-CIPPAlert", "")
+          (cmd) => cmd.name === alert.RawAlert.Command.replace("Get-CIPPAlert", ""),
         );
         const recurrenceOption = recurrenceOptions?.find(
-          (opt) => opt.value === alert.RawAlert.Recurrence
+          (opt) => opt.value === alert.RawAlert.Recurrence,
         );
         const postExecutionValue = postExecutionOptions.filter((opt) =>
-          alert.RawAlert.PostExecution.split(",").includes(opt.value)
+          alert.RawAlert.PostExecution.split(",").includes(opt.value),
         );
         let tenantFilterForForm;
         if (alert.RawAlert.TenantGroup) {
@@ -184,6 +184,7 @@ const AlertWizard = () => {
           recurrence: recurrenceOption,
           postExecution: postExecutionValue,
           startDateTime: startDateTimeForForm,
+          CustomSubject: alert.RawAlert.CustomSubject || "",
           AlertComment: alert.RawAlert.AlertComment || "",
         };
         if (usedCommand?.requiresInput && alert.RawAlert.Parameters) {
@@ -216,7 +217,7 @@ const AlertWizard = () => {
         setAlertType("audit");
         setIsLoadingExistingAlert(true);
         const foundLogbook = logbookOptions?.find(
-          (logbook) => logbook.value === alert.RawAlert.type
+          (logbook) => logbook.value === alert.RawAlert.type,
         );
         const rawConditions = alert.RawAlert.Conditions || [];
         const formattedConditions = rawConditions.map((cond) => {
@@ -256,6 +257,7 @@ const AlertWizard = () => {
           Actions: alert.RawAlert.Actions,
           logbook: foundLogbook,
           AlertComment: alert.RawAlert.AlertComment || "",
+          CustomSubject: alert.RawAlert.CustomSubject || "",
           conditions: [], // Include empty array to register field structure
         };
         // Reset first without spawning rows to avoid rendering empty operator fields
@@ -264,7 +266,7 @@ const AlertWizard = () => {
         setTimeout(() => {
           // Seed previous operator values BEFORE setting conditions to prevent clearing
           prevOperatorValuesRef.current = formattedConditions.map((c) =>
-            (c.Operator?.value || "").toLowerCase()
+            (c.Operator?.value || "").toLowerCase(),
           );
 
           // Process each condition with proper normalization
@@ -277,7 +279,7 @@ const AlertWizard = () => {
             // Normalize based on operator and property type
             if (Array.isArray(finalInput)) {
               finalInput = finalInput.map((item) =>
-                typeof item === "string" ? { label: item, value: item } : item
+                typeof item === "string" ? { label: item, value: item } : item,
               );
               // Further ensure label/value presence and rebuild from schema if possible
               const schemaOptions = auditLogSchema[cond.Property?.value] || [];
@@ -362,7 +364,7 @@ const AlertWizard = () => {
       }));
 
       const recommendedOption = updatedRecurrenceOptions?.find(
-        (opt) => opt.value === commandValue.value.recommendedRunInterval
+        (opt) => opt.value === commandValue.value.recommendedRunInterval,
       );
 
       if (recommendedOption) {
@@ -381,7 +383,7 @@ const AlertWizard = () => {
     if (!selectedPreset) return;
     setIsLoadingPreset(true);
     const selectedTemplate = auditLogTemplates?.find(
-      (template) => template.value === selectedPreset.value
+      (template) => template.value === selectedPreset.value,
     );
     if (!selectedTemplate) {
       setIsLoadingPreset(false);
@@ -412,7 +414,7 @@ const AlertWizard = () => {
     }
     setAddedEvent(formattedConditions.map((_, i) => ({ id: i })));
     prevOperatorValuesRef.current = formattedConditions.map((c) =>
-      (c.Operator?.value || "").toLowerCase()
+      (c.Operator?.value || "").toLowerCase(),
     );
     // Ensure React Hook Form registers nested fields before releasing the guard
     setTimeout(() => {
@@ -448,7 +450,7 @@ const AlertWizard = () => {
           // Prevent form reload after successful save
           setHasLoadedExistingAlert(true);
         },
-      }
+      },
     );
   };
 
@@ -477,7 +479,9 @@ const AlertWizard = () => {
       RowKey: router.query.clone ? undefined : router.query.id ? router.query.id : undefined,
       tenantFilter: values.tenantFilter,
       excludedTenants: values.excludedTenants,
-      Name: `${values.tenantFilter?.label || values.tenantFilter?.value}: ${values.command.label}`,
+      Name: values.CustomSubject
+        ? `${values.tenantFilter?.label || values.tenantFilter?.value}: ${values.CustomSubject}`
+        : `${values.tenantFilter?.label || values.tenantFilter?.value}: ${values.command.label}`,
       Command: { value: `Get-CIPPAlert${values.command.value.name}` },
       Parameters: getInputParams(),
       ScheduledTime: Math.floor(new Date().getTime() / 1000) + 60,
@@ -485,6 +489,7 @@ const AlertWizard = () => {
       Recurrence: values.recurrence,
       PostExecution: values.postExecution,
       AlertComment: values.AlertComment,
+      CustomSubject: values.CustomSubject,
     };
     apiRequest.mutate(
       { url: "/api/AddScheduledItem?hidden=true", data: postObject },
@@ -493,7 +498,7 @@ const AlertWizard = () => {
           // Prevent form reload after successful save
           setHasLoadedExistingAlert(true);
         },
-      }
+      },
     );
   };
 
@@ -600,19 +605,7 @@ const AlertWizard = () => {
                       </Grid>
 
                       <Grid size={12}>
-                        <CippButtonCard
-                          title="Alert Criteria"
-                          CardButton={
-                            <Button
-                              disabled={isValid ? false : true}
-                              type="submit"
-                              startIcon={<Save />}
-                            >
-                              Save Alert
-                            </Button>
-                          }
-                          sx={{ mb: 3 }}
-                        >
+                        <CippButtonCard title="Alert Criteria" sx={{ mb: 3 }}>
                           <Grid container spacing={3} sx={{ mb: 2 }}>
                             <Grid size={12}>
                               <CippFormComponent
@@ -753,7 +746,7 @@ const AlertWizard = () => {
                                     creatable={true}
                                     options={
                                       propertyWatcher?.[event.id]?.Property?.value?.startsWith(
-                                        "List:"
+                                        "List:",
                                       )
                                         ? auditLogSchema[
                                             propertyWatcher?.[event.id]?.Property?.value
@@ -813,7 +806,23 @@ const AlertWizard = () => {
                               </Grid>
                             </Grid>
                           ))}
+                        </CippButtonCard>
+                      </Grid>
 
+                      <Grid size={12}>
+                        <CippButtonCard
+                          title="Notification Settings"
+                          sx={{ mb: 3 }}
+                          CardButton={
+                            <Button
+                              disabled={isValid ? false : true}
+                              type="submit"
+                              startIcon={<Save />}
+                            >
+                              Save Alert
+                            </Button>
+                          }
+                        >
                           <Grid size={12} sx={{ mt: 2 }}>
                             <CippFormComponent
                               type="autoComplete"
@@ -828,6 +837,15 @@ const AlertWizard = () => {
                               options={actionsToTake}
                             />
                           </Grid>
+                          <Grid size={12}>
+                            <CippFormComponent
+                              type="textField"
+                              name="CustomSubject"
+                              label="Custom Subject"
+                              formControl={formControl}
+                              helperText="This text will be prefixed with the Tenant default domain name for easier filtering (e.g. $TenantDomain - $CustomSubject). Leave blank to use default subject format."
+                            />
+                          </Grid>
                           <Grid size={12} sx={{ mt: 2 }}>
                             <CippFormComponent
                               type="textField"
@@ -839,6 +857,7 @@ const AlertWizard = () => {
                               placeholder="Add documentation, FAQ links, or instructions for when this alert triggers..."
                             />
                           </Grid>
+
                           <Grid size={12} sx={{ mt: 2 }}>
                             <CippApiResults apiObject={apiRequest} />
                           </Grid>
@@ -897,19 +916,7 @@ const AlertWizard = () => {
                       </Grid>
 
                       <Grid size={12}>
-                        <CippButtonCard
-                          title="Alert Criteria"
-                          CardButton={
-                            <Button
-                              variant="contained"
-                              disabled={isValid ? false : true}
-                              type="submit"
-                              startIcon={<Save />}
-                            >
-                              Save Alert
-                            </Button>
-                          }
-                        >
+                        <CippButtonCard title="Alert Criteria">
                           <Grid spacing={2} container>
                             <Grid size={{ xs: 12, md: 6 }}>
                               <CippFormComponent
@@ -958,6 +965,14 @@ const AlertWizard = () => {
                                     name={commandValue.value?.inputName}
                                     formControl={formControl}
                                     label={commandValue.value?.inputLabel}
+                                    required={commandValue.value?.required || false}
+                                    {...(commandValue.value?.inputType === "autoComplete"
+                                      ? {
+                                          options: commandValue.value?.options,
+                                          creatable: commandValue.value?.creatable || true,
+                                          multiple: commandValue.value?.multiple || true,
+                                        }
+                                      : {})}
                                   />
                                 )}
                               {commandValue?.value?.multipleInput &&
@@ -974,39 +989,74 @@ const AlertWizard = () => {
                                         name={input.inputName}
                                         formControl={formControl}
                                         label={input.inputLabel}
+                                        required={input.required || false}
+                                        {...(input.inputType === "autoComplete"
+                                          ? {
+                                              options: input.options,
+                                              creatable: input.creatable ?? true,
+                                              multiple: input.multiple ?? true,
+                                            }
+                                          : {})}
                                       />
                                     </Grid>
                                   </Grid>
                                 ))}
                             </Grid>
-                            <Grid size={12}>
-                              <CippFormComponent
-                                type="autoComplete"
-                                name="postExecution"
-                                label="Alert via"
-                                validators={{
-                                  required: { value: true, message: "This field is required" },
-                                }}
-                                formControl={formControl}
-                                multiple={true}
-                                creatable={false}
-                                options={postExecutionOptions}
-                              />
-                            </Grid>
-                            <Grid size={12}>
-                              <CippFormComponent
-                                type="textField"
-                                name="AlertComment"
-                                label="Alert Comment"
-                                formControl={formControl}
-                                multiline={true}
-                                rows={3}
-                                placeholder="Add documentation, FAQ links, or instructions for when this alert triggers. Variable replacement like %tenantfilter%, %tenantname% and custom variables are supported. You can also use %resultcount% to include the number of results that triggered the alert."
-                              />
-                            </Grid>
-                            <Grid size={12}>
-                              <CippApiResults apiObject={apiRequest} />
-                            </Grid>
+                          </Grid>
+                        </CippButtonCard>
+                      </Grid>
+
+                      <Grid size={12}>
+                        <CippButtonCard
+                          title="Notification Settings"
+                          sx={{ mb: 3 }}
+                          CardButton={
+                            <Button
+                              disabled={isValid ? false : true}
+                              type="submit"
+                              startIcon={<Save />}
+                            >
+                              Save Alert
+                            </Button>
+                          }
+                        >
+                          <Grid size={12}>
+                            <CippFormComponent
+                              type="textField"
+                              name="CustomSubject"
+                              label="Custom Subject"
+                              formControl={formControl}
+                              helperText="This text will be prefixed with the Tenant default domain name for easier filtering (e.g. $TenantDomain - $CustomSubject). Leave blank to use default subject format."
+                            />
+                          </Grid>
+                          <Grid size={12} sx={{ mt: 2 }}>
+                            <CippFormComponent
+                              type="autoComplete"
+                              name="postExecution"
+                              label="Actions to take"
+                              validators={{
+                                required: { value: true, message: "This field is required" },
+                              }}
+                              formControl={formControl}
+                              multiple={true}
+                              creatable={false}
+                              options={postExecutionOptions}
+                            />
+                          </Grid>
+                          <Grid size={12} sx={{ mt: 2 }}>
+                            <CippFormComponent
+                              type="textField"
+                              name="AlertComment"
+                              label="Alert Comment"
+                              formControl={formControl}
+                              multiline={true}
+                              rows={3}
+                              placeholder="Add documentation, FAQ links, or instructions for when this alert triggers. Variable replacement like %tenantfilter%, %tenantname% and custom variables are supported. You can also use %resultcount% to include the number of results that triggered the alert."
+                            />
+                          </Grid>
+
+                          <Grid size={12} sx={{ mt: 2 }}>
+                            <CippApiResults apiObject={apiRequest} />
                           </Grid>
                         </CippButtonCard>
                       </Grid>
